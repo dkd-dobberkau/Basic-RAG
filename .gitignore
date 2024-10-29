@@ -1,0 +1,4 @@
+data/*
+filtered/*
+urls/*
+**/.env
