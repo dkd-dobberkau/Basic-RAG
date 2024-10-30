@@ -1,4 +1,5 @@
 data/*
 filtered/*
 urls/*
-**/.env
+.env
+**/__pycache__/**
