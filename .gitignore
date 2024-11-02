@@ -1,5 +1,8 @@
+.env
+**/__pycache__/**
 data/*
 filtered/*
 urls/*
-.env
-**/__pycache__/**
+solr/volume/data/**/data/*
+solr/volume/logs/**
+solr/volume/log4j2.xml
