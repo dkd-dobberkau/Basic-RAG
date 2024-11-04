@@ -1,14 +1,20 @@
 import os
 from os.path import join, exists
+from pypdf import PdfReader
 from typing import Tuple
 
 class DataFilter:
     # returns the title and the content of the article
     def _filter(self, file_path : str)  -> Tuple[str, str]:
         return "", ""
+    
+    # returns the text content of a pdf
+    def _get_pdf_content(self, path):
+        reader = PdfReader(path)
+        return [page.extract_text() for page in reader.pages].join("\n")
 
     """
-    filters the input path and puts it to the output (creates the output folder if it is missing)
+    filters the input path and puts it to the output (creates the output folder if it is missing
     """
     def process_folder(self, input_path : str, output_path : str):
         if not exists(input_path):
@@ -19,12 +25,14 @@ class DataFilter:
             os.mkdir(output_path)
         
         for filename in os.listdir(input_path):
+            if filename == "urls.txt":
+                continue
+            
             path = join(input_path, filename)
     
             title, content = self._filter(path)
 
-            out_filename = title.replace(' ', '_').replace(' ', '_').lower() + '.txt'
-            with open(join(output_path, out_filename), 'w') as file:
+            with open(join(output_path, filename), 'w') as file:
                 file.write(title + "\n" + content)
 
 from bs4 import BeautifulSoup
@@ -161,15 +169,20 @@ class DbFilter(DataFilter):
             os.mkdir(output_path)
         
         for filename in os.listdir(input_path):
-            path = join(input_path, filename)
-
-            extension = filename.split(".")[-1].lower()
-
-            if extension == "pdf":
-                shutil.copyfile(path, join(output_path, filename))
+            if filename == "urls.txt":
                 continue
 
-            title, content = self._filter(path)
+            path = join(input_path, filename)
+            extension = filename.split(".")[-1].lower()
+
+            title : str
+            content : str
+
+            if extension == "pdf":
+                title = filename.capitalize().removesuffix(".pdf")
+                content = self._get_pdf_content(path)
+            else:
+                title, content = self._filter(path)
 
             out_filename = title.replace(' ', '_').replace(' ', '_').lower() + '.txt'
             with open(join(output_path, out_filename), 'w', encoding="utf8") as file:

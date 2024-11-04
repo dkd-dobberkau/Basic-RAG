@@ -15,7 +15,7 @@ docker create --name solr_server -v ./solr/volume:/var/solr -p 8983:8983 -e SOLR
 docker start solr_server
 ```
 4. Reload the core by visiting [http://localhost:8983/solr/admin/cores?action=RELOAD&core=ragcore](http://localhost:8983/solr/admin/cores?action=RELOAD&core=ragcore)
-5. Configure a `.env` file in the root folder:
+5. Configure a `.env` file in the root directory:
 ```env
 SOLR_SERVER=localhost:8983
 CORE_NAME=ragcore

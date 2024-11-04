@@ -1,5 +1,3 @@
-
-from dotenv import load_dotenv
 import streamlit as st
 from typing import Literal
 import os
@@ -18,8 +16,6 @@ def load_assistants() -> dict[str, str]:
 
 # State handling
 if 'initialized' not in st.session_state:
-    load_dotenv()
-    # api_key = os.environ.get('API_KEY') if needed
     st.session_state["assistants"] = load_assistants()
     st.session_state["selected_assistant"] = "Tutor"
     st.session_state["messages"] = []
