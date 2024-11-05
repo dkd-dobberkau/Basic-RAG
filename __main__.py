@@ -2,7 +2,7 @@ import os
 from os.path import join, exists
 from dotenv import load_dotenv
 import sys
-import requests
+from retrieval.downloader import Downloader
 from retrieval.filters import DataFilter, MicrosoftDocFilter, WikiFilter, DbFilter
 from retrieval.solr_handler import SolrHandler
 
@@ -20,7 +20,7 @@ def main ():
         print("Missing data folder")
         quit(-1)
 
-    url_for_id = download_data(data_dir)
+    url_for_id = Downloader().download_data(data_dir)
 
     # *configure your data subfolders here
     data_subfolders = {
@@ -34,46 +34,6 @@ def main ():
 
     # Uploading the filtered data to Solr
     upload_data(filtered_dir, data_subfolders, url_for_id)
-
-def _download(url : str, out : str, out_path : str) -> bool:
-    if url.lower().endswith(".pdf"):
-        out = f"{url.split('/')[-1].lower()}"
-    
-    file_path = join(out_path, out)
-
-    try:
-        response = requests.get(url=url, stream=True)
-        response.raise_for_status()  # Check if the request was successful
-        with open(file_path, "wb") as file:
-            for chucnk in response.iter_content(chunk_size=8192):
-                file.write(chucnk)
-        return True
-    except requests.RequestException as error:
-        print(f"Error downloading file: {error}")
-        return False
-
-def download_data(data_dir : str) -> dict[str, str]:
-    url_for_id = {}
-
-    for folder in os.listdir(data_dir):
-        subdirectory = join(data_dir, folder)
-        link_path = join(subdirectory, "urls.txt")
-        
-        if not exists(link_path):
-            continue
-    
-        i = 1
-
-        with open(link_path, 'r', encoding='utf-8') as file:
-            for url in file:
-                id = f"{folder}_{i}"
-                download_success = _download(url, id, subdirectory)
-                
-                if download_success:
-                    url_for_id[id] = url
-                i += 1
-    return url_for_id
-
 
 def filter_data(data_dir : str, filtered_dir : str, subfolders : dict[str, tuple[DataFilter, str]]):
     if not exists(filtered_dir):

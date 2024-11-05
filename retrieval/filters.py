@@ -32,15 +32,15 @@ class DataFilter:
     
             title, content = self._filter(path)
 
-            with open(join(output_path, filename), 'w') as file:
+            with open(join(output_path, filename), 'w', encoding="utf-8") as file:
                 file.write(title + "\n" + content)
 
 from bs4 import BeautifulSoup
 
 class MicrosoftDocFilter(DataFilter):
     def _filter(self, path):
-        with open(path) as file:
-            soup = BeautifulSoup(file, 'html.parser')
+        with open(path, encoding='utf-8') as file:
+            soup = BeautifulSoup(file, 'html.parser', from_encoding="utf-8")
 
             # finding html elements by their tags
             article_div = soup.find('div', attrs={'class': 'content'})
@@ -129,11 +129,9 @@ class WikiFilter(DataFilter):
 
             return title, result.strip()
 
-import shutil
-
 class DbFilter(DataFilter):
     def _filter(self, path):
-        with open(path, encoding="utf8") as file:
+        with open(path, encoding="utf-8") as file:
             soup = BeautifulSoup(file, 'html.parser')
 
             # finding root of the content
