@@ -3,14 +3,14 @@ from os.path import join, exists
 from dotenv import load_dotenv
 import sys
 import requests
-from filtering.filters import DataFilter, MicrosoftDocFilter, WikiFilter, DbFilter
-from solr.handler import SolrHandler
+from retrieval.filters import DataFilter, MicrosoftDocFilter, WikiFilter, DbFilter
+from retrieval.solr_handler import SolrHandler
 
 def main ():
     project_dir = os.path.dirname(__file__)
 
     # Loading packages
-    for package in ['filtering', 'solr', 'UI']:
+    for package in ['filtering', 'retrieval', 'UI']:
         sys.path.append(join(project_dir, package))
 
     # Handling data
@@ -35,9 +35,11 @@ def main ():
     # Uploading the filtered data to Solr
     upload_data(filtered_dir, data_subfolders, url_for_id)
 
-def _download(url : str, out : str, out_path : str, verbose = False) -> bool:
-    extension = ".pdf" if url.lower().endswith(".pdf") else ""
-    file_path = join(out_path, f"{out}{extension}")
+def _download(url : str, out : str, out_path : str) -> bool:
+    if url.lower().endswith(".pdf"):
+        out = f"{url.split('/')[-1].lower()}"
+    
+    file_path = join(out_path, out)
 
     try:
         response = requests.get(url=url, stream=True)
@@ -69,7 +71,7 @@ def download_data(data_dir : str) -> dict[str, str]:
                 
                 if download_success:
                     url_for_id[id] = url
-            i += 1
+                i += 1
     return url_for_id
 
 

@@ -3,6 +3,6 @@
 data/*
 filtered/*
 urls/*
-solr/volume/data/**/data/*
-solr/volume/logs/**
-solr/volume/log4j2.xml
+retrieval/volume/data/**/data/*
+retrieval/volume/logs/**
+retrieval/volume/log4j2.xml
