@@ -26,7 +26,7 @@ class SolrHandler:
             print(error)
         return False
     
-    def upload_forlder(self, folder : str, language : str, url_for_data : dict[str, str]):
+    def upload_forlder(self, folder : str, url_for_data : dict[str, str]):
         if not exists(folder):
             print(f"{folder} doesn't exist")
             return
@@ -43,8 +43,8 @@ class SolrHandler:
                 docs.append({
                     "id": filename,
                     "title": content.splitlines()[0],
-                    "text": content.splitlines()[1:],
-                    "url": url_for_data[filename]
+                    "text": "\n".join(content.splitlines()[1:]),
+                    "url": url_for_data[filename] if filename in url_for_data else ""
                 })
 
         self.solr.add(docs)

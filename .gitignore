@@ -6,3 +6,4 @@ urls/*
 retrieval/volume/data/**/data/*
 retrieval/volume/logs/**
 retrieval/volume/log4j2.xml
+LLM/ollama/**

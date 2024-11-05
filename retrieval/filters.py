@@ -11,7 +11,7 @@ class DataFilter:
     # returns the text content of a pdf
     def _get_pdf_content(self, path):
         reader = PdfReader(path)
-        return [page.extract_text() for page in reader.pages].join("\n")
+        return "\n".join([page.extract_text() for page in reader.pages])
 
     """
     filters the input path and puts it to the output (creates the output folder if it is missing

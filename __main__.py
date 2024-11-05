@@ -5,60 +5,76 @@ import sys
 from retrieval.downloader import Downloader
 from retrieval.filters import DataFilter, MicrosoftDocFilter, WikiFilter, DbFilter
 from retrieval.solr_handler import SolrHandler
+from LLM.ollama import OllamaClient
+import subprocess
 
 def main ():
     project_dir = os.path.dirname(__file__)
+    prepare(project_dir)
 
-    # Loading packages
+    # Downloading data
+    data_dir = join(project_dir, 'data')
+    url_for_id = download_data(data_dir)
+
+    # *configure your data subfolders here
+    subfolder_processors = {
+        "microsoft": MicrosoftDocFilter(),
+        "wiki": WikiFilter(),
+        "db": DbFilter()
+    }
+
+    # Filtering the data
+    filtered_dir = join(project_dir, 'filtered')
+    filter_data(data_dir, filtered_dir, subfolder_processors)
+
+    # Uploading the filtered data to Solr
+    solr = SolrHandler(
+        os.environ.get('SOLR_SERVER'), 
+        os.environ.get('CORE_NAME')
+    )
+    
+    upload_data(solr, filtered_dir, subfolder_processors.keys(), url_for_id)
+
+    # Setting up chat client
+    try:
+        proc = subprocess.Popen(f"streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}")
+        proc.wait()
+    except KeyboardInterrupt:
+        pass
+    except Exception as error:
+        print(error)
+
+# loading packages and environment variables
+def prepare(project_dir : str):
+    load_dotenv()
+
     for package in ['filtering', 'retrieval', 'UI']:
         sys.path.append(join(project_dir, package))
 
-    # Handling data
-    data_dir = join(project_dir, 'data')
-
+def download_data(data_dir : str) -> dict[str, str]:
     if not exists(data_dir):
         print("Missing data folder")
         quit(-1)
 
-    url_for_id = Downloader().download_data(data_dir)
+    return Downloader().download_data(data_dir)
 
-    # *configure your data subfolders here
-    data_subfolders = {
-        "microsoft": (MicrosoftDocFilter(), "de"),
-        "wiki": (WikiFilter(), "en"),
-        "db": (DbFilter(), "hu")
-    }
-
-    filtered_dir = join(project_dir, 'filtered')
-    filter_data(data_dir, filtered_dir, data_subfolders)
-
-    # Uploading the filtered data to Solr
-    upload_data(filtered_dir, data_subfolders, url_for_id)
-
-def filter_data(data_dir : str, filtered_dir : str, subfolders : dict[str, tuple[DataFilter, str]]):
+def filter_data(data_dir : str, filtered_dir : str, subfolders : dict[str, DataFilter]):
     if not exists(filtered_dir):
         os.mkdir(filtered_dir)
 
-    for folder, helpers in subfolders.items():
-        helpers[0].process_folder(
+    for folder, processor in subfolders.items():
+        processor.process_folder(
             join(data_dir, folder),
             join(filtered_dir, folder)
         ) 
 
-def upload_data(filtered_dir : str, subfolders : dict[str, tuple[DataFilter, str]], urls : dict[str, str]):
-    load_dotenv()
-    handler = SolrHandler(
-        os.environ.get('SOLR_SERVER'), 
-        os.environ.get('CORE_NAME')
-    )
-
+def upload_data(handler : SolrHandler, filtered_dir : str, subfolders : list[str], urls : dict[str, str]):
     if not handler.is_available():
         quit(-1)
     
-    for folder, helpers in subfolders.items():
+    for folder in subfolders:
         handler.upload_forlder(
             folder=join(filtered_dir, folder),
-            language=helpers[1],
             url_for_data=urls
         )
 
