@@ -1,6 +1,5 @@
 import streamlit as st
 import sys
-import asyncio
 import os
 from os.path import join
 from dotenv import load_dotenv
@@ -76,7 +75,6 @@ if prompt := st.chat_input("Say something"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            print('xd')
             response = st.write_stream(st.session_state.client.new_message(prompt))
 
         add_message(response, "ai")

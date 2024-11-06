@@ -8,8 +8,9 @@
     <luceneMatchVersion>9.7</luceneMatchVersion>
     <dataDir>${solr.data.dir:}</dataDir>
 
-    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
-    <codecFactory class="solr.SchemaCodecFactory"/>
+    <directoryFactory name="DirectoryFactory"
+        class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}" />
+    <codecFactory class="solr.SchemaCodecFactory" />
 
     <indexConfig>
         <lockType>${solr.lock.type:native}</lockType>
@@ -34,10 +35,11 @@
     <query>
         <maxBooleanClauses>${solr.max.booleanClauses:1024}</maxBooleanClauses>
         <minPrefixQueryTermLength>${solr.query.minPrefixLength:-1}</minPrefixQueryTermLength>
-        <filterCache size="512" initialSize="512" autowarmCount="0"/>
-        <queryResultCache size="512" initialSize="512" autowarmCount="0"/>
-        <documentCache size="512" initialSize="512" autowarmCount="0"/>
-        <cache name="perSegFilter" class="solr.CaffeineCache" size="10" initialSize="0" autowarmCount="10" regenerator="solr.NoOpRegenerator" />
+        <filterCache size="512" initialSize="512" autowarmCount="0" />
+        <queryResultCache size="512" initialSize="512" autowarmCount="0" />
+        <documentCache size="512" initialSize="512" autowarmCount="0" />
+        <cache name="perSegFilter" class="solr.CaffeineCache" size="10" initialSize="0"
+            autowarmCount="10" regenerator="solr.NoOpRegenerator" />
         <enableLazyFieldLoading>true</enableLazyFieldLoading>
         <queryResultWindowSize>20</queryResultWindowSize>
         <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
@@ -71,6 +73,9 @@
             <str name="wt">json</str>
             <str name="indent">true</str>
         </lst>
+        <arr name="last-components">
+            <str>highlight</str>
+        </arr>
     </requestHandler>
 
     <initParams path="/update/**,/query,/select,/spell">
@@ -78,9 +83,11 @@
             <str name="df">_text_</str>
         </lst>
     </initParams>
+    
+    <similarity class="solr.BM25SimilarityFactory" />
 
     <searchComponent name="spellcheck" class="solr.SpellCheckComponent">
-        <str name="queryAnalyzerFieldType">text_general</str> 
+        <str name="queryAnalyzerFieldType">text_general</str>
         <lst name="spellchecker">
             <str name="name">default</str>
             <str name="field">_text_</str>
@@ -97,7 +104,8 @@
 
     <requestHandler name="/spell" class="solr.SearchHandler" startup="lazy">
         <lst name="defaults">
-            <!-- Solr will use suggestions from both the 'default' spellchecker and from the 'wordbreak' spellchecker and combine them.
+            <!-- Solr will use suggestions from both the 'default' spellchecker and from the
+            'wordbreak' spellchecker and combine them.
                 collations (re-written queries) can include a combination of corrections from both spellcheckers -->
             <str name="spellcheck.dictionary">default</str>
             <str name="spellcheck">on</str>
@@ -119,7 +127,7 @@
         <highlighting>
             <fragmenter name="gap" default="true" class="solr.highlight.GapFragmenter">
                 <lst name="defaults">
-                    <int name="hl.fragsize">100</int>
+                    <int name="hl.fragsize">450</int>
                 </lst>
             </fragmenter>
             <fragmenter name="regex" class="solr.highlight.RegexFragmenter">
@@ -138,11 +146,13 @@
             </formatter>
 
             <encoder name="html" class="solr.highlight.HtmlEncoder" />
-            <fragListBuilder name="simple" class="solr.highlight.SimpleFragListBuilder"/>
-            <fragListBuilder name="single" class="solr.highlight.SingleFragListBuilder"/>
-            <fragListBuilder name="weighted" default="true" class="solr.highlight.WeightedFragListBuilder"/>
+            <fragListBuilder name="simple" class="solr.highlight.SimpleFragListBuilder" />
+            <fragListBuilder name="single" class="solr.highlight.SingleFragListBuilder" />
+            <fragListBuilder name="weighted" default="true"
+                class="solr.highlight.WeightedFragListBuilder" />
 
-            <fragmentsBuilder name="default" default="true" class="solr.highlight.ScoreOrderFragmentsBuilder">
+            <fragmentsBuilder name="default" default="true"
+                class="solr.highlight.ScoreOrderFragmentsBuilder">
             </fragmentsBuilder>
 
             <fragmentsBuilder name="colored" class="solr.highlight.ScoreOrderFragmentsBuilder">
@@ -157,14 +167,16 @@
                 </lst>
             </fragmentsBuilder>
 
-            <boundaryScanner name="default" default="true" class="solr.highlight.SimpleBoundaryScanner">
+            <boundaryScanner name="default" default="true"
+                class="solr.highlight.SimpleBoundaryScanner">
                 <lst name="defaults">
                     <str name="hl.bs.maxScan">10</str>
                     <str name="hl.bs.chars">.,!? &#9;&#10;&#13;</str>
                 </lst>
             </boundaryScanner>
 
-            <boundaryScanner name="breakIterator" class="solr.highlight.BreakIteratorBoundaryScanner">
+            <boundaryScanner name="breakIterator"
+                class="solr.highlight.BreakIteratorBoundaryScanner">
                 <lst name="defaults">
                     <str name="hl.bs.type">WORD</str>
                     <str name="hl.bs.language">en</str>
@@ -172,10 +184,10 @@
                 </lst>
             </boundaryScanner>
         </highlighting>
-    </searchComponent>  
+    </searchComponent>
 
-    <updateProcessor class="solr.UUIDUpdateProcessorFactory" name="uuid"/>
-    <updateProcessor class="solr.RemoveBlankFieldUpdateProcessorFactory" name="remove-blank"/>
+    <updateProcessor class="solr.UUIDUpdateProcessorFactory" name="uuid" />
+    <updateProcessor class="solr.RemoveBlankFieldUpdateProcessorFactory" name="remove-blank" />
     <updateProcessor class="solr.FieldNameMutatingUpdateProcessorFactory" name="field-name-mutating">
         <str name="pattern">[^\w-\.]</str>
         <str name="replacement">_</str>
@@ -184,7 +196,7 @@
         <int name="maxFields">1000</int>
         <bool name="warnOnly">true</bool>
     </updateProcessor>
-    <updateProcessor class="solr.ParseLongFieldUpdateProcessorFactory" name="parse-long"/>
+    <updateProcessor class="solr.ParseLongFieldUpdateProcessorFactory" name="parse-long" />
     <updateProcessor class="solr.ParseDateFieldUpdateProcessorFactory" name="parse-date">
         <arr name="format">
             <str>yyyy-MM-dd['T'[HH:mm[:ss[.SSS]][z</str>
@@ -196,7 +208,7 @@
             <str>EEE MMM ppd HH:mm:ss [z ]yyyy</str>
         </arr>
     </updateProcessor>
-    
+
     <updateProcessor class="solr.AddSchemaFieldsUpdateProcessorFactory" name="add-schema-fields">
         <lst name="typeMapping">
             <str name="valueClass">java.lang.String</str>
@@ -205,7 +217,7 @@
                 <str name="dest">*_str</str>
                 <int name="maxChars">256</int>
             </lst>
-        
+
             <bool name="default">true</bool>
         </lst>
         <lst name="typeMapping">
@@ -217,39 +229,39 @@
             <str name="valueClass">java.lang.Integer</str>
             <str name="fieldType">plong</str>
         </lst>
-    </updateProcessor> 
+    </updateProcessor>
 
-    <updateRequestProcessorChain 
-        name="add-unknown-fields-to-the-schema" 
+    <updateRequestProcessorChain
+        name="add-unknown-fields-to-the-schema"
         default="${update.autoCreateFields:true}"
-        processor="uuid,remove-blank,field-name-mutating,max-fields,parse-long,parse-date,add-schema-fields" 
+        processor="uuid,remove-blank,field-name-mutating,max-fields,parse-long,parse-date,add-schema-fields"
     >
-        <processor class="solr.LogUpdateProcessorFactory"/>
-        <processor class="solr.DistributedUpdateProcessorFactory"/>
-        <processor class="solr.RunUpdateProcessorFactory"/>
+        <processor class="solr.LogUpdateProcessorFactory" />
+        <processor class="solr.DistributedUpdateProcessorFactory" />
+        <processor class="solr.RunUpdateProcessorFactory" />
     </updateRequestProcessorChain>
 
-    <updateRequestProcessorChain 
-        name="langid-detection" 
+    <updateRequestProcessorChain
+        name="langid-detection"
         default="${update.autoCreateFields:true}"
     >
         <processor class="solr.update.processor.LangDetectLanguageIdentifierUpdateProcessorFactory">
-            <str name="langid.fl">title,text</str> 
+            <str name="langid.fl">title,text</str>
             <str name="langid.langField">language_s</str>
             <lst name="langid.langs">
                 <str>en</str>
                 <str>de</str>
                 <str>hu</str>
-            </lst>  
-        </processor> 
+            </lst>
+        </processor>
 
         <processor class="solr.scripting.update.ScriptUpdateProcessorFactory">
             <str name="script">script.js</str>
             <str name="engine">rhino</str>
         </processor>
-        
-        <processor class="solr.LogUpdateProcessorFactory"/>
-        <processor class="solr.DistributedUpdateProcessorFactory"/>
-        <processor class="solr.RunUpdateProcessorFactory"/>
+
+        <processor class="solr.LogUpdateProcessorFactory" />
+        <processor class="solr.DistributedUpdateProcessorFactory" />
+        <processor class="solr.RunUpdateProcessorFactory" />
     </updateRequestProcessorChain>
 </config>

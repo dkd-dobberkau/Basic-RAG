@@ -36,7 +36,7 @@ UI_PORT=8501
 
 7. Install packages: (python 3.9 is required for streamlit)
 ```bash
-pip install python-dotenv ollama beautifulsoup4 pypdf pysolr wikitextparser streamlit
+pip install python-dotenv ollama beautifulsoup4 pypdf pysolr wikitextparser streamlit langdetect
 ```
 
 <!--`docker exec -u root -t -i solr_server /bin/bash`, don't forget to update rhino-->
