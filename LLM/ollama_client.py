@@ -1,6 +1,5 @@
 import os
-import asyncio
-from ollama import Client, AsyncClient, Options
+from ollama import Client, Options
 from retrieval.solr_handler import SolrHandler
 
 class OllamaClient:
@@ -8,9 +7,13 @@ class OllamaClient:
         #* you could add relevant options based on this article: https://medium.com/@auslei/how-to-use-ollamas-generate-and-chat-functions-4f90eac8d0fd
         # options = Options()
 
-        # self.client = Client(host=host)
+        self.client = Client(host=host)
+        
+        running : list[dict] = self.client.ps()['models']
+        
+        if sum(r['name'] == model for r in running) == 0:
+            print(f"This model isn't running! Try `docker exec -it ollama_docker ollama run {model}`")
 
-        self.client = AsyncClient(host=host)
         self.model = model
         self.solr = solr
         self.message_history : list[dict[str, str]] = []
@@ -26,20 +29,15 @@ class OllamaClient:
         with open(f"{self.contexts_dir}/{assistant}.txt", "r", encoding="utf-8") as file:
             return file.read()
 
-    
-    def new_chat(self, assistant : str):
-        self.message_history = [
-            {"role": "system", "content": self._get_prompt(assistant) }    
-        ]
-    
-
-    async def new_message(self, message : str):
+    def new_message(self, message : str):
+        print(message)
         self.message_history.append({"role": "user", "content": message})
-        async for part in await AsyncClient().chat(model=self.model, messages=[message], stream=True):
-            print(part['message']['content'], end='', flush=True)
-    
-    #def new_message(self, message : str) -> str:
-    #    self.message_history.append({"role": "user", "content": message})
-    #    response = self.client.chat(self.model, messages=self.message_history)
-    #    self.message_history.append({"role": "assistant", "content": response['message']['content'] })
-    #    return response['message']['content']
+        
+        stream = self.client.chat(model=self.model, messages=self.message_history, stream=True)
+        result = []
+
+        for chunk in stream:
+            result.append(chunk['message']['content'])
+            yield chunk['message']['content']
+
+        self.message_history.append({"role": "assistant", "content": "".join(result)})
