@@ -246,7 +246,7 @@
         default="${update.autoCreateFields:true}"
     >
         <processor class="solr.update.processor.LangDetectLanguageIdentifierUpdateProcessorFactory">
-            <str name="langid.fl">title,text</str>
+            <str name="langid.fl">text,title</str>
             <str name="langid.langField">language_s</str>
             <lst name="langid.langs">
                 <str>en</str>

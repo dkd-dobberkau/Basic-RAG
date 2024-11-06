@@ -39,8 +39,13 @@ if 'initialized' not in st.session_state:
     st.session_state["initialized"] = True
 
 # Communication
-def add_message(prompt : str, sender : Literal["user", "assistant", "ai", "human"]):
-    st.session_state.messages.append({ 'content': prompt, 'sender':  sender })
+def add_message(prompt : str, sender : Literal["user", "assistant", "ai", "human"], source : list[str] = []):
+    message = { 'content': prompt, 'sender':  sender }
+
+    if source and len(source) > 0:
+        message['sources'] = source
+
+    st.session_state.messages.append(message)
 
 def reset_context():
     st.session_state.client.new_chat(st.session_state.selected_assistant)
@@ -63,6 +68,11 @@ for message in st.session_state.messages:
     with st.chat_message(message['sender']):
         st.markdown(message["content"])
 
+        if "sources" in message and len(message["sources"]) > 0:
+            expander = st.expander(message["sources"])
+            for source in message["sources"]:
+                expander.write(source)
+
 if prompt := st.chat_input("Say something"):
     prompt = prompt.strip()
 
@@ -77,4 +87,4 @@ if prompt := st.chat_input("Say something"):
         with st.chat_message("assistant"):
             response = st.write_stream(st.session_state.client.new_message(prompt))
 
-        add_message(response, "ai")
+        add_message(response, "ai", st.session_state.client.message_history[-2]['sources'])

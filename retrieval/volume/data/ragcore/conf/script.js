@@ -7,12 +7,11 @@ function processAdd(cmd) {
 	var text = doc.getFieldValue("text")
 	const prefix = "text_"
 
-	/* set default language
-	if (!["en", "de", "hu"].includes(language)) {
+	// set default language
+	if (language != "en" && language != "de" && language != "hu") {
 		language = "en"
-		doc.setFieldValue("language_s", "en")
+		doc.setField("language_s", "en")
 	}
-	*/
 	
 	doc.setField(prefix + language, text);
 	doc.removeField("text")

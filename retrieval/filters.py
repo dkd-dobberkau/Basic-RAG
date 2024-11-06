@@ -9,9 +9,21 @@ class DataFilter:
         return "", ""
     
     # returns the text content of a pdf
-    def _get_pdf_content(self, path):
+    def _get_pdf_content(self, path : str, max_pages : int = 10) -> list[str]:
         reader = PdfReader(path)
-        return "\n".join([page.extract_text() for page in reader.pages])
+        
+        i = 0
+        result : list[str] = [ "" ]
+
+        for page in reader.pages:
+            result[-1] += f"\n{page.extract_text()}"
+            i += 1
+
+            if(max_pages == i):
+                result.append("")
+                i = 0
+
+        return result
 
     """
     filters the input path and puts it to the output (creates the output folder if it is missing
@@ -67,6 +79,11 @@ import re
 import wikitextparser as wtp
 
 class WikiFilter(DataFilter):
+    def __init__(self, urls_for_id : dict[str, str] = {}):
+        super().__init__()
+        self.urls_for_id = urls_for_id
+        self.keep_external_links = True
+
     def _handle_template(self, template) -> str:
         name : str = template.name.lower()
 
@@ -80,7 +97,9 @@ class WikiFilter(DataFilter):
 
     def _filter(self, path):
         with open(path) as file:
-            title = re.findall(r'title=(.*)&', path)[0]
+            file_name = path.replace("\\", "/").split("/")[-1]
+            
+            title = re.findall(r'title=(.*)&', self.urls_for_id[file_name])[0]
             content = file.read()
             parsed = wtp.parse(content)
 
@@ -110,12 +129,15 @@ class WikiFilter(DataFilter):
 
                 # getting link texts
                 for link in section.wikilinks:
-                    replacement = link.text if link.text else link.title
-                    section_content = section_content.replace(link.string, replacement)
+                    if link.text or link.title:
+                        replacement = link.text if link.text else link.title
+                        section_content = section_content.replace(link.string, replacement)
 
-                for link in section.external_links:
-                    replacement = link.text if link.text else link.url
-                    section_content = section_content.replace(link.string, replacement)
+                if not self.keep_external_links:
+                    for link in section.external_links:
+                        if link.text or link.url:
+                            replacement = link.text if link.text else link.url
+                            section_content = section_content.replace(link.string, replacement)
 
                 # removing comments
                 for comment in section.comments:
@@ -130,33 +152,56 @@ class WikiFilter(DataFilter):
             return title, result.strip()
 
 class DbFilter(DataFilter):
+    def _utf8_encode(self, path : str):
+        with open(path, encoding="windows-1250") as file:
+            content = file.read()
+            
+        encoded = content.encode('utf-8')
+
+        with open(path, 'wb') as file:
+            file.write(encoded)
+
+
     def _filter(self, path):
-        with open(path, encoding="utf-8") as file:
-            soup = BeautifulSoup(file, 'html.parser')
+        soup : BeautifulSoup = None
+        
+        try:
+            with open(path, encoding="utf-8") as file:
+                soup = BeautifulSoup(file, 'html.parser')
+        except UnicodeDecodeError:
+            # change the encoding to utf-8
+            self._utf8_encode(path)
 
-            # finding root of the content
-            main_content = soup.find('main')
+            with open(path, encoding="utf-8") as file:
+                content = file.read()
 
-            if not main_content or not main_content.find('h1'):
-                print(path)
+            # retry
+            soup = BeautifulSoup(content, 'html.parser')
+        
+        
+        main_content = soup.find('main')
 
-            # gets the first h1 as the title
-            title =  main_content.find('h1').text.strip()
-            text_containers = main_content.find_all(['p', 'li', 'td', 'th', 'h1', 'h2', 'h3', 'h4' ])
+        # finding root of the content
+        if not main_content or not main_content.find('h1'):
+            print(path)
 
-            # only using data after the title
-            has_started = False
+        # gets the first h1 as the title
+        title =  main_content.find('h1').text.strip()
+        text_containers = main_content.find_all(['p', 'li', 'td', 'th', 'h1', 'h2', 'h3', 'h4' ])
 
-            # uniting all the text content into a single string
-            text_content = []
+        # only using data after the title
+        has_started = False
 
-            for element in text_containers:
-                if has_started:
-                    text_content.append(element.text.strip())
-                else:
-                    has_started = element.text.strip() == title
+        # uniting all the text content into a single string
+        text_content = []
 
-            return title, "\n".join(text_content)
+        for element in text_containers:
+            if has_started:
+                text_content.append(element.text.strip())
+            else:
+                has_started = element.text.strip() == title
+
+        return title, "\n".join(text_content)
         
     def process_folder(self, input_path : str, output_path : str):
         if not exists(input_path):
@@ -166,6 +211,8 @@ class DbFilter(DataFilter):
         if not exists(output_path):
             os.mkdir(output_path)
         
+        print("Processing pdfs this may take a while")
+
         for filename in os.listdir(input_path):
             if filename == "urls.txt":
                 continue
@@ -177,11 +224,18 @@ class DbFilter(DataFilter):
             content : str
 
             if extension == "pdf":
-                title = filename.capitalize().removesuffix(".pdf")
+                # splitting the pdf into parts
                 content = self._get_pdf_content(path)
+                title = filename.capitalize().removesuffix(".pdf")
+                
+                # saving the parts
+                for part, text in enumerate(content, start=1):
+                    with open(join(output_path, f"{title}_{part}"), 'w', encoding="utf8") as file:
+                        file.write(title + "\n" + text)
+
+                continue
             else:
                 title, content = self._filter(path)
-
-            out_filename = title.replace(' ', '_').replace(' ', '_').lower() + '.txt'
-            with open(join(output_path, out_filename), 'w', encoding="utf8") as file:
+            
+            with open(join(output_path, filename), 'w', encoding="utf8") as file:
                 file.write(title + "\n" + content)

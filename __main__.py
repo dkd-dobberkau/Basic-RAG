@@ -9,36 +9,38 @@ import subprocess
 def main ():
     project_dir = os.path.dirname(__file__)
     prepare(project_dir)
-
-    # Downloading data
-    data_dir = join(project_dir, 'data')
-    url_for_id = download_data(data_dir)
-
-    # *configure your data subfolders here
-    subfolder_processors = {
-        "microsoft": MicrosoftDocFilter(),
-        "wiki": WikiFilter(),
-        "db": DbFilter()
-    }
-
-    # Filtering the data
-    filtered_dir = join(project_dir, 'filtered')
-    filter_data(data_dir, filtered_dir, subfolder_processors)
-
-    # Uploading the filtered data to Solr
-    solr = SolrHandler(
-        os.environ.get('SOLR_SERVER'), 
-        os.environ.get('CORE_NAME')
-    )
     
-    upload_data(solr, filtered_dir, subfolder_processors.keys(), url_for_id)
+    #! set to true to process data
+    if False:
+        # Downloading data
+        data_dir = join(project_dir, 'data')
+        url_for_id = download_data(data_dir)
 
-    # free up memory
-    del solr, filtered_dir, subfolder_processors, data_dir
+        # *configure your data subfolders here
+        subfolder_processors = {
+            "microsoft": MicrosoftDocFilter(),
+            "wiki": WikiFilter(url_for_id),
+            "db": DbFilter()
+        }
+
+        # Filtering the data
+        filtered_dir = join(project_dir, 'filtered')
+        filter_data(data_dir, filtered_dir, subfolder_processors)
+
+        # Uploading the filtered data to Solr
+        solr = SolrHandler(
+            os.environ.get('SOLR_SERVER'), 
+            os.environ.get('CORE_NAME')
+        )
+        
+        upload_data(solr, filtered_dir, subfolder_processors.keys(), url_for_id)
+
+        # free up memory
+        del solr, filtered_dir, subfolder_processors, data_dir
 
     # Setting up chat client
     try:
-        proc = subprocess.Popen(f"python -m streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}")
+        proc = subprocess.Popen(f"python -m streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}", shell=True)
         proc.wait()
     except KeyboardInterrupt:
         pass
