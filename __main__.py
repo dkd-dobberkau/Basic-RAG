@@ -2,10 +2,8 @@ import os
 from os.path import join, exists
 from dotenv import load_dotenv
 import sys
-from retrieval.downloader import Downloader
+from retrieval import Downloader, SolrHandler
 from retrieval.filters import DataFilter, MicrosoftDocFilter, WikiFilter, DbFilter
-from retrieval.solr_handler import SolrHandler
-from LLM.ollama import OllamaClient
 import subprocess
 
 def main ():
@@ -35,9 +33,12 @@ def main ():
     
     upload_data(solr, filtered_dir, subfolder_processors.keys(), url_for_id)
 
+    # free up memory
+    del solr, filtered_dir, subfolder_processors, data_dir
+
     # Setting up chat client
     try:
-        proc = subprocess.Popen(f"streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}")
+        proc = subprocess.Popen(f"python -m streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}")
         proc.wait()
     except KeyboardInterrupt:
         pass
@@ -48,7 +49,7 @@ def main ():
 def prepare(project_dir : str):
     load_dotenv()
 
-    for package in ['filtering', 'retrieval', 'UI']:
+    for package in ['filtering', 'retrieval']:
         sys.path.append(join(project_dir, package))
 
 def download_data(data_dir : str) -> dict[str, str]:
