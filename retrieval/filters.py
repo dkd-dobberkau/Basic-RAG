@@ -1,6 +1,9 @@
 import os
+import re
 from os.path import join, exists
 from pypdf import PdfReader
+import wikitextparser as wtp
+from bs4 import BeautifulSoup
 from typing import Tuple
 
 class DataFilter:
@@ -11,7 +14,6 @@ class DataFilter:
     # returns the text content of a pdf
     def _get_pdf_content(self, path : str, max_pages : int = 10) -> list[str]:
         reader = PdfReader(path)
-        
         i = 0
         result : list[str] = [ "" ]
 
@@ -24,6 +26,13 @@ class DataFilter:
                 i = 0
 
         return result
+
+    # generic html getter
+    def _get_html_content(self, path : str) -> str:
+        with open(path, encoding='utf-8') as file:
+            soup = BeautifulSoup(file, 'html.parser', from_encoding="utf-8")
+            return soup.get_text()
+
 
     """
     filters the input path and puts it to the output (creates the output folder if it is missing
@@ -47,9 +56,11 @@ class DataFilter:
             with open(join(output_path, filename), 'w', encoding="utf-8") as file:
                 file.write(title + "\n" + content)
 
-from bs4 import BeautifulSoup
-
 class MicrosoftDocFilter(DataFilter):
+    def __init__(self, start_phrase : str):
+        super().__init__()
+        self.start_phrase = start_phrase
+    
     def _filter(self, path):
         with open(path, encoding='utf-8') as file:
             soup = BeautifulSoup(file, 'html.parser', from_encoding="utf-8")
@@ -60,7 +71,7 @@ class MicrosoftDocFilter(DataFilter):
             title = article_div.find('h1').text.strip()
             text_containers = article_div.find_all(['p', 'li', 'td', 'th', 'h2', 'h3' ])
 
-            # only using data after 'Gilt für: ...' (removes metadata)
+            # only using data after 'start phrase ...' (removes unnecessarry data)
             has_started = False
 
             # uniting all the text content into a single string
@@ -70,13 +81,9 @@ class MicrosoftDocFilter(DataFilter):
                 if has_started:
                     text_content.append(element.text.strip())
                 else:
-                    has_started = element.text.strip().startswith('Gilt für:')
+                    has_started = element.text.strip().startswith(self.start_phrase)
 
             return title, "\n".join(text_content)
-        
-
-import re
-import wikitextparser as wtp
 
 class WikiFilter(DataFilter):
     def __init__(self, urls_for_id : dict[str, str] = {}):
@@ -96,10 +103,10 @@ class WikiFilter(DataFilter):
         return ''
 
     def _filter(self, path):
-        with open(path) as file:
-            file_name = path.replace("\\", "/").split("/")[-1]
+        with open(path, encoding='utf-8') as file:
+            file_name = os.path.basename(path)
             
-            title = re.findall(r'title=(.*)&', self.urls_for_id[file_name])[0]
+            title = re.findall(r'title=(.*)&', self.urls_for_id[file_name])[0] if file_name in self.urls_for_id else file_name.capitalize()
             content = file.read()
             parsed = wtp.parse(content)
 
@@ -177,7 +184,6 @@ class DbFilter(DataFilter):
 
             # retry
             soup = BeautifulSoup(content, 'html.parser')
-        
         
         main_content = soup.find('main')
 

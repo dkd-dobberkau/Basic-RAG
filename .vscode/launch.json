@@ -5,20 +5,23 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: Current File",
+            "name": "Python Debugger: All",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/__main__.py",
             "console": "integratedTerminal",
+            "args": [
+                "--all",
+            ],
         },
         {
-            "name": "Python Debugger: Module",
+            "name": "Python Debugger: UI",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "args": [
                 "run",
-                "./UI/ui.py"
+                "${workspaceFolder}/UI/ui.py"
             ],
         }
     ]

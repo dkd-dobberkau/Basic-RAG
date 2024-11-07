@@ -69,9 +69,8 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
         if "sources" in message and len(message["sources"]) > 0:
-            expander = st.expander(message["sources"])
-            for source in message["sources"]:
-                expander.write(source)
+            with st.expander("Data sources", False):
+                st.write("\n".join(message["sources"]))
 
 if prompt := st.chat_input("Say something"):
     prompt = prompt.strip()
@@ -87,4 +86,12 @@ if prompt := st.chat_input("Say something"):
         with st.chat_message("assistant"):
             response = st.write_stream(st.session_state.client.new_message(prompt))
 
-        add_message(response, "ai", st.session_state.client.message_history[-2]['sources'])
+        sources = []
+        if "sources" in st.session_state.client.message_history[-2]:
+            sources = st.session_state.client.message_history[-2]["sources"]
+
+            if len(sources) > 0:
+                with st.expander("Data sources", False):
+                    st.write("\n".join(sources))
+
+        add_message(response, "ai", sources)

@@ -2,7 +2,7 @@
 
 ### Installation
 1. Install [git](https://git-scm.com/downloads) and [docker](https://docs.docker.com/engine/install/)
-2. Clone this repository and navigate into the root directory:
+2. Clone / download this repository and navigate into the root directory:
 ```bash
 git clone https://github.com/Kristof-me/NLP-assignments
 cd /path/to/NLP-assignments
@@ -39,4 +39,13 @@ UI_PORT=8501
 pip install python-dotenv ollama beautifulsoup4 pypdf pysolr wikitextparser streamlit langdetect
 ```
 
-<!--`docker exec -u root -t -i solr_server /bin/bash`, don't forget to update rhino-->
+### Run
+- For the first time use:
+    ```bash
+    python __main__py --all
+    ```
+- Later:
+    ```bash
+    python __main__py --ui
+    ```
+- Alternatively you could use the predefined options from `launch.json` *(mainly for debugging)*

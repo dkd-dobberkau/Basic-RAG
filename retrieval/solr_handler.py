@@ -5,11 +5,12 @@ from pysolr import Solr, SolrError, Results
 from typing import Tuple
 
 class SolrHandler:
-    def __init__(self, host : str, core : str):
+    def __init__(self, host : str, core : str, min_score : float = 1.5):
         super().__init__()
         self.host = host
         self.core = core
-        self.solr = Solr(self._get_url(), timeout=10)
+        self.solr = Solr(self._get_url(), timeout=410)
+        self.min_score = min_score
 
     def _get_url(self, core : str = '') -> str:
         return f"http://{self.host}/solr/{core if core != '' else self.core}"
@@ -45,20 +46,21 @@ class SolrHandler:
 
                 url = url_for_data[filename] if filename in url_for_data else ""
 
+                # handling split pdfs
                 if url == "":
-                    backup = '_'.join(filename.split('_')[:-1])
+                    backup = '_'.join(filename.split('_')[:-1]).lower() + ".pdf"
                     url = url_for_data[backup] if backup in url_for_data else ""
                 
                 docs.append({
                     "id": filename,
                     "title": content.splitlines()[0],
                     "text": "\n".join(content.splitlines()[1:]),
-                    "url": url_for_data[filename] if filename in url_for_data else ""
+                    "url": url
                 })
 
         self.solr.add(docs)
 
-    def search(self, query : str, language : str, top_n : int = 10) -> Tuple[str, str]:
+    def search(self, query : str, language : str, top_n : int = 10) -> Tuple[list[str], list[str]]:
         with open(os.path.join(os.path.dirname(__file__), f'./volume/data/ragcore/conf/lang/stopwords_{language}.txt'), 'r', encoding='utf-8') as file:
             stopwords = file.read().splitlines()
         
@@ -66,36 +68,42 @@ class SolrHandler:
         clear_query = " ".join([word for word in clear_query.split() if word not in stopwords])
         text_field = f"text_{language}"
 
-        ''' a well setup highlighter could also do the job
-        "hl":"true",
-        "hl.tag.pre":"**",
-        "hl.tag.post":"**",
-        "hl.method":"unified",
-        "hl.usePhraseHighLighter":"false",
-        "hl.highlightMultiTerm":"false",
-        "hl.fragsize": str(frag_size),
-        '''
+        #* a well setup highlighter could also do the job
+        # "hl":"true",
+        # "hl.tag.pre":"**",
+        # "hl.tag.post":"**",
+        # "hl.method":"unified",
+        # "hl.usePhraseHighLighter":"false",
+        # "hl.highlightMultiTerm":"false",
+        # "hl.fragsize": str(frag_size),
 
         params = {
-            "fl":f"id,title,text_en,url,"+text_field,
-            "sort":"score desc",
-            "rows": str(top_n),
-            "tie":"0.1",
-            "defType":"edismax",
-            "qf":f"title^1 {text_field}^5",
-            "pf":f"{text_field}^2",
+            "fl":       "score,title,text_en,url,"+text_field,
+            "sort":     "score desc",
+            "rows":     str(top_n),
+            "tie":      "0.1",
+            "defType":  "edismax",
+            "qf":       f"title^2 {text_field}^6 url^1",
+            "pf":       f"{text_field}^2",
             "stopwords":"true",
         }
 
         results = self.solr.search(clear_query,**params)
-        
-        if len(results) == 0 and language != "en":
-            #* if there was a field with translations it would help a lot
-            return self.search(query, "en", top_n)
 
+        # filter results
+        results.docs = [doc for doc in results.docs if doc['score'] > self.min_score]
+        
+        if len(results) == 0:
+            # if no results found, try to search in english
+            if language != "en":
+                #* translation could be done here
+                return self.search(clear_query, "en", top_n)
+            else:
+                return [], []
+
+        #* correcting the results because of nouns
         scores : list[Tuple] = []
 
-        #* this could be improved by embeddings but sometimes the nouns wouldn't have the expected distance
         for index, doc in enumerate(results.docs, start=1):
             score = 500 - index * 50
             text = re.sub(r'[^\w\s]', ' ', doc[text_field].lower())
@@ -107,5 +115,16 @@ class SolrHandler:
             ranking : Tuple = (score, doc)
             scores.append(ranking)
 
-        best = max(scores, key=lambda x: x[0])
-        return best[1]['title'] + "\n" + best[1][text_field], best[1]['url'] if best[1]['url'] != "" else best[1]['id']
+        #! right now it's just a single result, but it could return multiple documents
+        best_doc = max(scores, key=lambda x: x[0])[1]
+
+        best_texts = [
+            best_doc['title'] + "\n" + best_doc[text_field]
+        ]
+
+        sources = []
+
+        if 'url' in best_doc:
+            sources.append(best_doc['url'])
+
+        return best_texts, sources
