@@ -5,12 +5,12 @@ from pysolr import Solr, SolrError, Results
 from typing import Tuple
 
 class SolrHandler:
-    def __init__(self, host : str, core : str, min_score : float = 1.5):
+    def __init__(self, host : str, core : str, min_score_weight : float = 1):
         super().__init__()
         self.host = host
         self.core = core
         self.solr = Solr(self._get_url(), timeout=410)
-        self.min_score = min_score
+        self.min_score_weight = min_score_weight
 
     def _get_url(self, core : str = '') -> str:
         return f"http://{self.host}/solr/{core if core != '' else self.core}"
@@ -83,7 +83,7 @@ class SolrHandler:
             "rows":     str(top_n),
             "tie":      "0.1",
             "defType":  "edismax",
-            "qf":       f"title^2 {text_field}^6 url^1",
+            "qf":       f"title^2 {text_field} url",
             "pf":       f"{text_field}^2",
             "stopwords":"true",
         }
@@ -91,7 +91,8 @@ class SolrHandler:
         results = self.solr.search(clear_query,**params)
 
         # filter results
-        results.docs = [doc for doc in results.docs if doc['score'] > self.min_score]
+        expected_score = len(query.split()) * self.min_score_weight
+        results.docs = [doc for doc in results.docs if doc['score'] > expected_score]
         
         if len(results) == 0:
             # if no results found, try to search in english
