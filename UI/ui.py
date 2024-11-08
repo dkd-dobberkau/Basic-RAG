@@ -14,18 +14,15 @@ def init_client():
         sys.path.append(join(current_dir, "..", dir))
 
     from retrieval import SolrHandler
-    from LLM import OllamaClient
+    from LLM import OllamaClient, OpenAI_Client
 
     solr_handler = SolrHandler(
         os.environ.get("SOLR_SERVER"),
         os.environ.get("CORE_NAME")
     )
 
-    client = OllamaClient(
-        os.environ.get("OLLAMA_SERVER"), 
-        os.environ.get("OLLAMA_MODEL"),
-        solr_handler
-    )
+    client = OllamaClient(os.environ.get("OLLAMA_SERVER"), os.environ.get("OLLAMA_MODEL"), solr_handler)
+    #client = OpenAI_Client(os.environ.get("OPENAI_API_KEY"), os.environ.get("OPENAI_MODEL"), solr_handler)
 
     st.session_state["client"] = client
 

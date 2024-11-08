@@ -10,7 +10,6 @@ class OllamaClient(LLM_Client):
 
         self.client = Client(host=host)
         self.model = model
-        self.only_explicit_query = use_explicit_query
 
         # check if the model is running
         running : list[dict] = self.client.ps()['models']
@@ -21,7 +20,7 @@ class OllamaClient(LLM_Client):
     def new_message(self, message : str):
         should_run_query =  self.should_run_query(message)
 
-        if self.only_explicit_query:
+        if self.use_explicit_query:
             message = message.removeprefix("/query")
 
         self.message_history.append({"role": "user", "content": message})
