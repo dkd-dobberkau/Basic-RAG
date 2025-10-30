@@ -93,7 +93,7 @@ def main (main_args  : Optional[Sequence[str]] = None):
     # Setting up chat client
     if args.ui or args.all:
         try:
-            proc = subprocess.Popen(f"python -m streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}", shell=True)
+            proc = subprocess.Popen(f"python3 -m streamlit run {join(project_dir, 'UI/ui.py')} --server.port {os.environ.get('UI_PORT')}", shell=True)
             proc.wait()
         except KeyboardInterrupt:
             pass

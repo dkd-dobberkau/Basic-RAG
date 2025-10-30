@@ -38,6 +38,9 @@ class Downloader:
             with open(link_path, 'r', encoding='utf-8') as file:
                 for url in file:
                     url = url.strip()
+                    # Skip empty lines and comments
+                    if not url or url.startswith('#'):
+                        continue
                     id = f"{folder}_{i}"
 
                     if url.lower().endswith(".pdf"):

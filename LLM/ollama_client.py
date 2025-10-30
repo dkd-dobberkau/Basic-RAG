@@ -1,4 +1,4 @@
-from client import LLM_Client
+from .client import LLM_Client
 from ollama import Client, Options
 from retrieval.solr_handler import SolrHandler
 
@@ -32,21 +32,11 @@ class OllamaClient(LLM_Client):
 
         response = []
 
-        has_started = True
-
         for chunk in stream:
             content = chunk['message']['content']
-            
-            # skip the header
-            if content == '<|start_header_id|>':
-                has_started = False
-                continue
-            elif content == '<|end_header_id|>':
-                has_started = True
-                continue
-            
-            if has_started:
-                response.append(chunk['message']['content'])
-                yield chunk['message']['content']
+
+            # Yield all content (llama3.2 doesn't need header filtering)
+            response.append(content)
+            yield content
 
         self.message_history.append({"role": "assistant", "content": "".join(response)})

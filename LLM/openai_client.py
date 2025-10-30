@@ -1,4 +1,4 @@
-from client import LLM_Client
+from .client import LLM_Client
 from openai import OpenAI
 from retrieval.solr_handler import SolrHandler
 

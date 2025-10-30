@@ -51,10 +51,11 @@ class SolrHandler:
                     backup = '_'.join(filename.split('_')[:-1]).lower() + ".pdf"
                     url = url_for_data[backup] if backup in url_for_data else ""
                 
+                # Store in language-specific field for proper text analysis
                 docs.append({
                     "id": filename,
                     "title": content.splitlines()[0],
-                    "text": "\n".join(content.splitlines()[1:]),
+                    "text_en": "\n".join(content.splitlines()[1:]),  # Default to English
                     "url": url
                 })
 
@@ -90,8 +91,9 @@ class SolrHandler:
 
         results = self.solr.search(clear_query,**params)
 
-        # filter results
-        expected_score = len(query.split()) * self.min_score_weight
+        # filter results based on processed query length and adjusted threshold
+        # Use a more reasonable threshold (0.1 per query term)
+        expected_score = len(clear_query.split()) * 0.1 * self.min_score_weight
         results.docs = [doc for doc in results.docs if doc['score'] > expected_score]
         
         if len(results) == 0:
@@ -119,8 +121,17 @@ class SolrHandler:
         #! right now it's just a single result, but it could return multiple documents
         best_doc = max(scores, key=lambda x: x[0])[1]
 
+        # Limit text to first 500 characters to avoid context overflow
+        full_text = best_doc[text_field]
+        # Take first 500 chars and try to end at a sentence
+        limited_text = full_text[:500]
+        last_period = limited_text.rfind('.')
+        if last_period > 100:  # If there's a sentence ending, use it
+            limited_text = limited_text[:last_period + 1]
+        limited_text += ("..." if len(full_text) > len(limited_text) else "")
+
         best_texts = [
-            best_doc['title'] + "\n" + best_doc[text_field]
+            best_doc['title'] + "\n" + limited_text
         ]
 
         sources = []

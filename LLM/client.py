@@ -61,10 +61,10 @@ class LLM_Client:
     def run_query(self):
         last_question = self.message_history.pop()['content']
         language = detect(last_question)
-        
+
         if language not in ['en', 'de', 'hu']:
             language = 'en'
-        
+
         # trying to remove unnecessarry characters
         query_text = last_question.strip().removesuffix('?')
 
@@ -76,9 +76,11 @@ class LLM_Client:
         if len(results) == 0:
             #! sometimes this may not fit the prompt format
             self.insert_docs_to_query("No data found", last_question, [])
-            return
-        
-        self.insert_docs_to_query("\n".join(results), last_question, sources)
+        else:
+            self.insert_docs_to_query("\n".join(results), last_question, sources)
+
+        # Add the user question back so Ollama receives proper user message
+        self.message_history.append({"role": "user", "content": last_question})
 
     def new_message(self, message : str) -> Generator[Any, Any, None]:
         # override this method in the child class

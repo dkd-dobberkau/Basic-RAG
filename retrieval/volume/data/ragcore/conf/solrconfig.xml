@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-    <lib dir="${user.dir}/../modules/langid/lib/" regex=".*\.jar" />
-    <lib dir="${user.dir}/../contrib/analysis-extras/lib/" />
-    <lib dir="${user.dir}/../modules/scripting/lib/" />
+    <!-- Commented out lib directives that reference non-existent modules -->
+    <!-- <lib dir="${user.dir}/../modules/langid/lib/" regex=".*\.jar" /> -->
+    <!-- <lib dir="${user.dir}/../contrib/analysis-extras/lib/" /> -->
+    <!-- <lib dir="${user.dir}/../modules/scripting/lib/" /> -->
     <lib dir="${solr.core.instanceDir}/lib/" regex=".*\.jar" />
 
     <luceneMatchVersion>9.7</luceneMatchVersion>
@@ -80,7 +81,7 @@
 
     <initParams path="/update/**,/query,/select,/spell">
         <lst name="defaults">
-            <str name="df">_text_</str>
+            <str name="df">text</str>
         </lst>
     </initParams>
     
@@ -241,6 +242,8 @@
         <processor class="solr.RunUpdateProcessorFactory" />
     </updateRequestProcessorChain>
 
+    <!-- Commented out langid-detection chain as it requires unavailable modules -->
+    <!--
     <updateRequestProcessorChain
         name="langid-detection"
         default="${update.autoCreateFields:true}"
@@ -264,4 +267,5 @@
         <processor class="solr.DistributedUpdateProcessorFactory" />
         <processor class="solr.RunUpdateProcessorFactory" />
     </updateRequestProcessorChain>
+    -->
 </config>

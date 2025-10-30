@@ -105,8 +105,21 @@ class WikiFilter(DataFilter):
     def _filter(self, path):
         with open(path, encoding='utf-8') as file:
             file_name = os.path.basename(path)
-            
-            title = re.findall(r'title=(.*)&', self.urls_for_id[file_name])[0] if file_name in self.urls_for_id else file_name.capitalize()
+
+            # Extract title from URL or use filename
+            title = file_name.capitalize()
+            if file_name in self.urls_for_id:
+                url = self.urls_for_id[file_name]
+                # Try to extract from query parameter
+                title_match = re.findall(r'title=([^&]+)', url)
+                if title_match:
+                    title = title_match[0]
+                else:
+                    # Extract from /wiki/Article_name format
+                    wiki_match = re.findall(r'/wiki/([^?#]+)', url)
+                    if wiki_match:
+                        title = wiki_match[0].replace('_', ' ')
+
             content = file.read()
             parsed = wtp.parse(content)
 

@@ -1,9 +1,29 @@
+# Environment and secrets
 .env
+
+# Python cache
 **/__pycache__/**
+*.pyc
+*.pyo
+
+# Data directories
 data/*
+!data/*/urls.txt
 filtered/*
 urls/*
-retrieval/volume/data/**/data/*
+
+# Solr data (keep config, exclude indexed data)
+retrieval/volume/data/*/data/*
+!retrieval/volume/data/*/conf/
 retrieval/volume/logs/**
 retrieval/volume/log4j2.xml
+
+# Ollama models
 LLM/ollama/**
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
