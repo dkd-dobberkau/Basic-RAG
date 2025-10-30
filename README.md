@@ -1,18 +1,27 @@
-# NLP ASSIGNMENT 1
+# Basic RAG System
+
+A Retrieval-Augmented Generation (RAG) system using Solr for document retrieval and Ollama/OpenAI for language generation.
+
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Step-by-step setup guide (recommended for first-time users)
+- **[DONE.md](DONE.md)** - Complete debugging log with all fixes applied
+- **[Questions.md](Questions.md)** - Technical Q&A about RAG implementation
+- **[SOLR_FIXES.md](SOLR_FIXES.md)** - Detailed Solr configuration fixes
 
 ### Installation
 1. Install [git](https://git-scm.com/downloads) and [docker](https://docs.docker.com/engine/install/)
 2. Clone / download this repository and navigate into the root directory:
 ```bash
-git clone https://github.com/Kristof-me/NLP-assignments
-cd /path/to/NLP-assignments
+git clone https://github.com/Kristof-me/Basic-RAG
+cd Basic-RAG
 ```
 3. Set up docker for solr:
     - *Note: Turning off security manager could expose your system to security risks. For production versions please setup authentication and java policies which allow scripts to run.*
 ```bash
 docker pull solr
-docker create --name solr_server -v ./retrieval/volume:/var/solr -p 8983:8983 -e SOLR_SECURITY_MANAGER_ENABLED=false solr 
-docker start solr_server
+docker create --name solr_docker -v ./retrieval/volume:/var/solr -p 8983:8983 -e SOLR_SECURITY_MANAGER_ENABLED=false solr
+docker start solr_docker
 ```
 4. Reload the core by visiting [http://localhost:8983/solr/admin/cores?action=RELOAD&core=ragcore](http://localhost:8983/solr/admin/cores?action=RELOAD&core=ragcore)
 5. Select and setup your model:
@@ -43,21 +52,34 @@ OPENAI_MODEL=<model_name>
 OPENAI_API_KEY=<api_key>
 ```
 
-1. Install packages: (python 3.9 is required for streamlit)
+7. Install packages: (python 3.9+ is required)
 ```bash
-pip install python-dotenv ollama beautifulsoup4 pypdf pysolr wikitextparser streamlit langdetect openai
+pip install -r requirements.txt
+# Or manually:
+# pip install python-dotenv ollama beautifulsoup4 pypdf pysolr wikitextparser streamlit langdetect openai
 ```
 
 ### Run
-- For the first time use:
+- For the first time (downloads data, filters, uploads to Solr, starts UI):
     ```bash
-    python __main__py --all
+    python __main__.py --all
     ```
-- Later:
+- Later (just starts the UI):
     ```bash
-    python __main__py --ui
+    python __main__.py --ui
     ```
-- Alternatively you could use the predefined options from `launch.json` *(mainly for debugging)*
+- Individual steps:
+    ```bash
+    python __main__.py --download  # Download Wikipedia data
+    python __main__.py --filter    # Filter and clean data
+    python __main__.py --upload    # Upload to Solr
+    python __main__.py --ui        # Start web interface
+    ```
 
-- When the UI launches you can start chatting:
-    ![](./img/gpt.png)
+### Usage
+When the UI launches at http://localhost:8501, you can start chatting with the system. Questions will automatically trigger RAG retrieval from the knowledge base.
+
+![Screenshot](./img/gpt.png)
+
+### Troubleshooting
+If you encounter issues during setup, see [DONE.md](DONE.md) for solutions to common problems.
