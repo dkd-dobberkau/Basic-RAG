@@ -5,10 +5,15 @@ Your RAG system is now set up and ready to use!
 ## What's Been Configured
 
 ✅ **Solr** - Running on `localhost:8983`
+
 ✅ **Ollama** - Running on `localhost:11434` with `llama3.2:3b` model
+
 ✅ **Python dependencies** - All packages installed
+
 ✅ **.env file** - Environment variables configured
+
 ✅ **Data directories** - Created with sample structure
+
 
 ## Current Status
 
